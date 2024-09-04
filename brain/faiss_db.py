@@ -2,7 +2,7 @@ from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from pprint import pprint
 from langchain_community.document_loaders import JSONLoader
 from langchain_community.vectorstores import FAISS
-import summarise as summ
+import brain.query_bot as summ
 
 def search_with_faiss(query):
     embeddings = HuggingFaceEmbeddings()
