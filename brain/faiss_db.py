@@ -2,7 +2,7 @@ from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from pprint import pprint
 from langchain_community.document_loaders import JSONLoader
 from langchain_community.vectorstores import FAISS
-import brain.query_bot as summ
+from langchain_community.document_loaders import PyPDFLoader
 
 def search_with_faiss(query):
     embeddings = HuggingFaceEmbeddings()
@@ -12,14 +12,9 @@ def search_with_faiss(query):
     )
 
     except:
-        file_path='searchResults/scraped_data.json'
-        loader = JSONLoader(
-        file_path=file_path,
-        jq_schema='.results[]',
-        text_content=False)
-
+        file_path = ("files/bharatpur/Admission.pdf")
+        loader = PyPDFLoader(file_path)
         pages = loader.load_and_split()
-
         faiss_index = FAISS.from_documents(pages, embeddings)
         faiss_index.save_local("faiss_index")
 
