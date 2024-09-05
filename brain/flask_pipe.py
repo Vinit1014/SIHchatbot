@@ -4,6 +4,14 @@ from groq import Groq
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain_community.document_loaders import PyPDFLoader
+from flask import Flask, request, jsonify
+import json
+from flask_cors import CORS
+
+# Initialize Flask app
+app = Flask(__name__)
+CORS(app)
+
 
 # Load the .env file
 load_dotenv()
@@ -29,7 +37,7 @@ def search_with_faiss(query, college):
         )
     
     retriever = faiss_index.as_retriever(k=5)
-    docs = retriever.invoke(query, k=5)  # Retrieve top 2 relevant documents
+    docs = retriever.invoke(query, k=5)  # Retrieve top 5 relevant documents
     return docs
 
 # Function to load PDF files and create FAISS index
@@ -77,26 +85,44 @@ def generate_summary(results, query):
 
     return completion.choices[0].message.content
 
-# Main function to perform the search and generate a summary
-def main():
-    college = "CTE_Udaipur"
-    query = f"Fee structure for {college}."
+# Flask route for handling search queries
+@app.route('/search', methods=['POST'])
+def search():
+    data = request.get_json()
+    query = data.get('query')
+    college = data.get('college', 'MNIT_Jaipur')  # Default to MNIT Jaipur if not provided
+    
+    if not query:
+        return jsonify({'error': 'Query is required'}), 400
     
     # Step 1: Search relevant documents using FAISS
     docs = search_with_faiss(query, college)
     
     # Combine the content of the retrieved documents
     results = "\n\n".join([doc.page_content for doc in docs])
-    print(results)
-
-    print("\n\n")
-    print("Summary:")
     
     # Step 2: Generate a summary using Groq
     summary = generate_summary(results, query)
     
-    # Print the summary
-    print(summary)
+    # Return the result as JSON
+    save_results = jsonify({
+        'query': query
+    })
+
+    # Append the results to a file a json file
+    # with open('results.json', 'a') as f:
+    #     f.write(json.dumps(save_results) + '\n')
+
+    # show output in the console
+    print('Sent')
+
+    return jsonify({
+        'text': summary
+    })
+
+@app.route('/test')
+def test():
+    return jsonify({'message': 'Server is running'})
 
 if __name__ == '__main__':
-    main()
+    app.run(debug=True, port=5000)
